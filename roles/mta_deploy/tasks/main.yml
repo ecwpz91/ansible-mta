@@ -1,0 +1,79 @@
+---
+# tasks file for mta_deploy
+
+- name: Print the gateway for each host when defined
+  ansible.builtin.debug:
+    msg: System {{ inventory_hostname }} has gateway {{ ansible_default_ipv4.gateway }}
+  when: ansible_default_ipv4.gateway is defined
+
+- name: Display all variables/facts known for a host
+  ansible.builtin.debug:
+    var: hostvars[inventory_hostname]
+    verbosity: 4
+
+- name: Install the latest version of Apache and Java
+  ansible.builtin.dnf:
+    name:
+      - httpd
+      - java
+    state: latest
+
+- name: Download and unarchive the migration toolkit
+  ansible.builtin.unarchive:
+    src: "{{ mta_download_url }}"
+    dest: "{{ mta_archive_dest }}"
+    remote_src: yes
+
+- name: Create a systemd unit file for migration toolkit
+  ansible.builtin.template:
+    src: templates/mta.service.j2
+    dest: /lib/systemd/system/mta.service
+
+- name: Just force systemd to reread configs
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Make sure mta service unit is running
+  ansible.builtin.systemd:
+    state: started
+    name: mta.service
+    enabled: yes
+
+- name: Configure Apache port redirection
+  ansible.builtin.template:
+    src: templates/vhost.conf.j2
+    dest: /etc/httpd/conf.d/vhost.conf
+
+- name: Run a configuration file syntax test for Apache
+  ansible.builtin.shell: /usr/sbin/apachectl configtest
+
+- name: Make sure httpd service unit is running
+  ansible.builtin.systemd:
+    state: started
+    name: httpd.service
+    enabled: yes
+
+- name: Permit traffic in default zone for http service
+  ansible.posix.firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+
+- name: Set httpd_can_network_connect flag on and persist across reboots
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect
+    state: yes
+    persistent: yes
+
+- name: Wait for server to restart
+  reboot:
+    reboot_timeout: 3600
+
+- name: Get uptime information
+  ansible.builtin.shell: /usr/bin/uptime
+  register: result
+
+- name: Print return information from the previous task
+  ansible.builtin.debug:
+    var: result
+    verbosity: 2

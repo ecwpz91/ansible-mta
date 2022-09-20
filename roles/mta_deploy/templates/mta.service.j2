@@ -1,0 +1,9 @@
+[Unit]
+Description=Launch migration toolkit for applications.
+
+[Service]
+Type=simple
+ExecStart=/bin/bash {{ mta_archive_dest }}/mta-web-distribution-5.2.1.Final/run_mta.sh
+
+[Install]
+WantedBy=multi-user.target

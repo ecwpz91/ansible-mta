@@ -1,0 +1,5 @@
+---
+# Download https://developers.redhat.com/content-gateway/file/migrationtoolkit-mta-web-distribution-5.3.0-with-authentication.zip
+# Then place the ZIP file on a Apache HTTP web server
+mta_download_url: <insert-link-to-MTA-zip-download>
+mta_archive_dest: /opt
