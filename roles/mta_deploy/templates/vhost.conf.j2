@@ -14,7 +14,7 @@
     Allow from all
   </Location>
   ProxyPass /auth http://localhost:8080/auth
-  ProxyPassReverse /mta-ui http://localhost:8080/auth
+  ProxyPassReverse /auth http://localhost:8080/auth
   <Location /auth>
     Order allow,deny
     Allow from all
